@@ -4,14 +4,11 @@
     Timezone Converter
 </PageTitle>
 
-<div class="align-content-center">
-    <span> Server TimeZone: @localTimeZone.Id</span>
-</div>
-<div>
+<div class="w-25 p-3">
     <TimeInput TValue="TimeOnly" @bind-Value="SourceTime" />
 </div>
 <div>Source Timezone
-<InputSelect @bind-Value="SourceTimezone">
+<InputSelect style="width: 33%;" @bind-Value="SourceTimezone">
     @foreach (string t in Timezones)
     {
         <option value="@t">@t</option>
@@ -27,7 +24,7 @@
 </InputSelect>
 </div>
 <div>
-    <Button @onclick="Convert">Convert</Button>
+    <Button class="btn btn-primary" @onclick="Convert">Convert</Button>
 </div>
 <div>
     <span>Converted time: @TargetTime </span>
@@ -42,7 +39,7 @@
     public TimeZoneInfo localTimeZone { get; set; }
     protected override async Task OnInitializedAsync()
     {
-        Timezones = TZConvert.KnownIanaTimeZoneNames.ToList();
+        Timezones = TZConvert.KnownIanaTimeZoneNames.OrderBy(t => t).ToList();
         localTimeZone = TZConvert.GetTimeZoneInfo(TimeZoneInfo.Local.Id);
         SourceTimezone = TZConvert.WindowsToIana(localTimeZone.Id);
         TargetTimezone = SourceTimezone;
