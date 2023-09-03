@@ -1,0 +1,60 @@
+﻿@page "/"
+
+<PageTitle>
+    Timezone Converter
+</PageTitle>
+
+<div class="align-content-center">
+    <span> Server TimeZone: @localTimeZone.Id</span>
+</div>
+<div>
+    <TimeInput TValue="TimeOnly" @bind-Value="SourceTime" />
+</div>
+<div>Source Timezone
+<InputSelect @bind-Value="SourceTimezone">
+    @foreach (string t in Timezones)
+    {
+        <option value="@t">@t</option>
+    }
+</InputSelect>
+</div>
+<div> Target Timezone
+<InputSelect @bind-Value="TargetTimezone">
+    @foreach (string t in Timezones)
+    {
+        <option value="@t">@t</option>
+    }
+</InputSelect>
+</div>
+<div>
+    <Button @onclick="Convert">Convert</Button>
+</div>
+<div>
+    <span>Converted time: @TargetTime </span>
+</div>
+@code {
+
+    public List<string> Timezones { get; set; } = new List<string>();
+    public string SourceTimezone { get; set; }
+    public string TargetTimezone { get; set; }
+    public TimeOnly SourceTime { get; set; }
+    public TimeOnly TargetTime { get; set; }
+    public TimeZoneInfo localTimeZone { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        Timezones = TZConvert.KnownIanaTimeZoneNames.ToList();
+        localTimeZone = TZConvert.GetTimeZoneInfo(TimeZoneInfo.Local.Id);
+        SourceTimezone = TZConvert.WindowsToIana(localTimeZone.Id);
+        TargetTimezone = SourceTimezone;
+    }
+
+    public void Convert()
+    {
+        DateTime sourceDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, SourceTime.Hour, SourceTime.Minute, SourceTime.Second);
+
+        TimeZoneInfo targetTZ = TZConvert.GetTimeZoneInfo(TargetTimezone);
+        DateTime targetDate = TimeZoneInfo.ConvertTime(sourceDate, localTimeZone, targetTZ);
+        TargetTime = new TimeOnly(targetDate.Hour, targetDate.Minute, targetDate.Second);
+        StateHasChanged();
+    }
+}
