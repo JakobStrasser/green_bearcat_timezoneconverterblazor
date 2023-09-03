@@ -1,4 +1,5 @@
 ﻿@page "/"
+@inject IJSRuntime JSRuntime;
 
 <PageTitle>
     Timezone Converter
@@ -7,21 +8,23 @@
 <div class="w-25 p-3">
     <TimeInput TValue="TimeOnly" @bind-Value="SourceTime" />
 </div>
-<div>Source Timezone
-<InputSelect style="width: 33%;" @bind-Value="SourceTimezone">
-    @foreach (string t in Timezones)
-    {
-        <option value="@t">@t</option>
-    }
-</InputSelect>
+<div>
+    Source Timezone
+    <InputSelect style="width: 33%;" @bind-Value="SourceTimezone">
+        @foreach (string t in Timezones)
+        {
+            <option value="@t">@t</option>
+        }
+    </InputSelect>
 </div>
-<div> Target Timezone
-<InputSelect @bind-Value="TargetTimezone">
-    @foreach (string t in Timezones)
-    {
-        <option value="@t">@t</option>
-    }
-</InputSelect>
+<div>
+    Target Timezone
+    <InputSelect @bind-Value="TargetTimezone">
+        @foreach (string t in Timezones)
+        {
+            <option value="@t">@t</option>
+        }
+    </InputSelect>
 </div>
 <div>
     <Button class="btn btn-primary" @onclick="Convert">Convert</Button>
@@ -29,6 +32,7 @@
 <div>
     <span>Converted time: @TargetTime.ToString("HH:mm"); </span>
 </div>
+
 @code {
 
     public List<string> Timezones { get; set; } = new List<string>();
@@ -39,10 +43,21 @@
     public TimeZoneInfo localTimeZone { get; set; }
     protected override async Task OnInitializedAsync()
     {
+        // SourceTime = TimeOnly.FromDateTime(DateTime.Now);
         Timezones = TZConvert.KnownIanaTimeZoneNames.OrderBy(t => t).ToList();
         localTimeZone = TZConvert.GetTimeZoneInfo(TimeZoneInfo.Local.Id);
         SourceTimezone = TZConvert.WindowsToIana(localTimeZone.Id);
         TargetTimezone = SourceTimezone;
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            DateTime UserDate = await JSRuntime.InvokeAsync<DateTime>("localDate");
+            SourceTime = TimeOnly.FromDateTime(UserDate);
+            StateHasChanged();
+        }
     }
 
     public void Convert()
