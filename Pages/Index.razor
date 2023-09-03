@@ -36,18 +36,19 @@
 @code {
 
     public List<string> Timezones { get; set; } = new List<string>();
-    public string SourceTimezone { get; set; }
-    public string TargetTimezone { get; set; }
+    public string? SourceTimezone { get; set; }
+    public string? TargetTimezone { get; set; }
     public TimeOnly SourceTime { get; set; }
     public TimeOnly TargetTime { get; set; }
-    public TimeZoneInfo localTimeZone { get; set; }
+    public TimeZoneInfo? localTimeZone { get; set; }
+#pragma warning disable CS1998
     protected override async Task OnInitializedAsync()
     {
         // SourceTime = TimeOnly.FromDateTime(DateTime.Now);
         Timezones = TZConvert.KnownIanaTimeZoneNames.OrderBy(t => t).ToList();
-        localTimeZone = TZConvert.GetTimeZoneInfo(TimeZoneInfo.Local.Id);
-        SourceTimezone = TZConvert.WindowsToIana(localTimeZone.Id);
-        TargetTimezone = SourceTimezone;
+        // localTimeZone = TZConvert.GetTimeZoneInfo(TimeZoneInfo.Local.Id);
+        // SourceTimezone = TZConvert.WindowsToIana(localTimeZone.Id);
+        // TargetTimezone = SourceTimezone;
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
@@ -55,6 +56,10 @@
         if (firstRender)
         {
             DateTime UserDate = await JSRuntime.InvokeAsync<DateTime>("localDate");
+            string localTimezoneJS = await JSRuntime.InvokeAsync<string>("localZone");
+            localTimeZone = TZConvert.GetTimeZoneInfo(localTimezoneJS);
+            SourceTimezone = TZConvert.WindowsToIana(localTimeZone.Id);
+            TargetTimezone = SourceTimezone;
             SourceTime = TimeOnly.FromDateTime(UserDate);
             StateHasChanged();
         }
@@ -63,10 +68,12 @@
     public void Convert()
     {
         DateTime sourceDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, SourceTime.Hour, SourceTime.Minute, SourceTime.Second);
-
-        TimeZoneInfo targetTZ = TZConvert.GetTimeZoneInfo(TargetTimezone);
-        DateTime targetDate = TimeZoneInfo.ConvertTime(sourceDate, localTimeZone, targetTZ);
-        TargetTime = new TimeOnly(targetDate.Hour, targetDate.Minute, targetDate.Second);
+        if (TargetTimezone is not null && localTimeZone is not null)
+        {
+            TimeZoneInfo targetTZ = TZConvert.GetTimeZoneInfo(TargetTimezone);
+            DateTime targetDate = TimeZoneInfo.ConvertTime(sourceDate, localTimeZone, targetTZ);
+            TargetTime = new TimeOnly(targetDate.Hour, targetDate.Minute, targetDate.Second);
+        }
         StateHasChanged();
     }
 }
